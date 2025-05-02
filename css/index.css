@@ -1,31 +1,86 @@
-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    margin: 0;
-    padding-bottom: 100px
-}
-.content {
-    flex: 1;
-}
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+  }
 
-header{
-    background:#333;
-    position: fixed;
-    top: 0;
-    /* left: 0; */
-    font-size: 60px;
+  body {
+    margin: 0;
+    padding: 0;
+    background: url('/media/bk-log.jpg') no-repeat center center fixed;
+    background-size: cover;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  .container {
+    background-color: rgba(60, 60, 60, 0.85);
+    border-radius: 10px;
+    display: flex;
+    width: 600px;
+    max-width: 90%;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+
+  .login-form {
+    padding: 30px;
+    background-color: #547373;
+    flex: 1;
+  }
+
+  .login-form h2 {
+    color: #fff;
+    margin-bottom: 20px;
+  }
+
+  .login-form input {
     width: 100%;
     padding: 10px;
-}
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+  }
 
-footer {
-    font-size: 20px;
-    position: fixed;
-    bottom: 0;
-    /* left: 0; */
+  .login-form input::placeholder {
+    color: #ccc;
+  }
+
+  .login-form button {
     width: 100%;
-    background: #333;
-    color: white;
-    padding: 5px;
-}
+    padding: 10px;
+    background-color: #f1c6b4;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .welcome-box {
+    flex: 1;
+    padding: 30px;
+    color: #f0e5df;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-left: 2px solid #888;
+  }
+
+  .welcome-box h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+  }
+
+  .welcome-box a {
+    color: #ccc;
+    text-decoration: none;
+    margin: 5px 0;
+    font-size: 14px;
+  }
+
+  .welcome-box a:hover {
+    text-decoration: underline;
+  }
