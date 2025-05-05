@@ -2,65 +2,90 @@
     box-sizing: border-box;
     font-family: Arial, sans-serif;
   }
-
+  
   body {
-    margin: 0;
-    padding: 0;
     background: url('/media/bk-log.jpg') no-repeat center center fixed;
-    background-size: cover;
-    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    background-size: cover;
   }
-
+  
+  
+  
   .container {
     background-color: rgba(60, 60, 60, 0.85);
     border-radius: 10px;
     display: flex;
-    width: 600px;
-    max-width: 90%;
+    flex-direction: row;
+    min-height: 400px;
+    width: 80vw;
+    max-width: 800px;
+    min-width: 300px;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    overflow: hidden;
+    overflow: visible; /* deja que crezca si hace falta */
   }
-
+  
+  .image_user {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+    height: 80px; 
+  }
+  
+  .image_user img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain; 
+  }
+  
   .login-form {
-    padding: 30px;
+    padding: 20px;
     background-color: #547373;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
   }
-
+  
   .login-form h2 {
+    text-align: center;
     color: #fff;
-    margin-bottom: 20px;
+    margin: 10px 0;
   }
-
+  
   .login-form input {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin: 10px 0;
     border: none;
     border-radius: 5px;
   }
-
+  
   .login-form input::placeholder {
     color: #ccc;
   }
-
+  
   .login-form button {
     width: 100%;
-    padding: 10px;
-    background-color: #f1c6b4;
+    padding: 12px;
+    background-color: #bfe1e7;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
     font-weight: bold;
   }
-
+  
   .welcome-box {
     flex: 1;
-    padding: 30px;
+    padding: 20px;
     color: #f0e5df;
     text-align: center;
     display: flex;
@@ -68,19 +93,35 @@
     justify-content: center;
     border-left: 2px solid #888;
   }
-
+  
   .welcome-box h1 {
     font-size: 28px;
     margin-bottom: 20px;
   }
-
+  
   .welcome-box a {
     color: #ccc;
     text-decoration: none;
     margin: 5px 0;
     font-size: 14px;
   }
-
+  
   .welcome-box a:hover {
     text-decoration: underline;
   }
+  
+
+  @media (max-width: 768px) {
+    .container {
+      flex-direction: column;
+      height: auto;
+      width: 90vw;
+    }
+  
+    .welcome-box {
+      border-left: none;
+      border-top: 2px solid #888;
+      margin-top: 20px;
+    }
+  }
+  

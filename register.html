@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register now</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/register.css" />
+</head>
+<body>
+  <div class="container animate__animated animate__slideInDown p-4">
+    <div class="w-100 text-center mb-4">
+      <h2>¡Regístrate ahora!</h2>
+    </div>
+
+    <form id="registerForm" class="w-100">
+      <div class="mb-3">
+        <label for="campusDropdown" class="form-label text-white">Centro Universitario</label>
+        <div class="dropdown">
+          <button class="btn btn-outline-light w-100 dropdown-toggle" type="button" id="campusDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            Selecciona un centro universitario
+          </button>
+          <ul class="dropdown-menu w-100" aria-labelledby="careerDropdown">
+            <li><a class="dropdown-item" href="#">CUUAD</a></li>
+            <li><a class="dropdown-item" href="#">CUCBA</a></li>
+            <li><a class="dropdown-item" href="#">CUCEA</a></li>
+            <li><a class="dropdown-item" href="#">CUCEI</a></li>
+            <li><a class="dropdown-item" href="#">CUCS</a></li>
+            <li><a class="dropdown-item" href="#">CUCSHI</a></li>
+            <li><a class="dropdown-item" href="#">CUALTOS</a></li>
+            <li><a class="dropdown-item" href="#">CUC</a></li>
+            <li><a class="dropdown-item" href="#">CUCIENEGA</a></li>
+            <li><a class="dropdown-item" href="#">CULAGOS</a></li>
+            <li><a class="dropdown-item" href="#">CUCSUR</a></li>
+            <li><a class="dropdown-item" href="#">CUNORTE</a></li>
+            <li><a class="dropdown-item" href="#">CUSUR</a></li>
+            <li><a class="dropdown-item" href="#">CUVALLES</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label text-white" for="emailInput">Correo institucional</label>
+        <input type="email" id="emailInput" class="form-control" placeholder="correo@alumnos.udg.mx" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="careerDropdown" class="form-label text-white">Carrera</label>
+        <div class="dropdown">
+          <button class="btn btn-outline-light w-100 dropdown-toggle" type="button" id="careerDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            Selecciona tu carrera
+          </button>
+          <ul class="dropdown-menu w-100" aria-labelledby="careerDropdown">
+            <li><a class="dropdown-item" href="#">ARQUITECTURA</a></li>
+            <li><a class="dropdown-item" href="#">ARTES</a></li>
+            <li><a class="dropdown-item" href="#">MUSICA</a></li>
+            <li><a class="dropdown-item" href="#">ADMINISTRACION</a></li>
+            <li><a class="dropdown-item" href="#">CONTADURIA PUBLICA</a></li>
+            <li><a class="dropdown-item" href="#">INGENIERIA EN COMPUTACION</a></li>
+            <li><a class="dropdown-item" href="#">RECURSOS HUMANOS</a></li>
+            <li><a class="dropdown-item" href="#">CIENCIAS FORENSES</a></li>
+            <li><a class="dropdown-item" href="#">NUTRICION</a></li>
+            <li><a class="dropdown-item" href="#">PSICOLOGIA</a></li>
+            <li><a class="dropdown-item" href="#">MECANICA INDUSTRIAL</a></li>
+            <li><a class="dropdown-item" href="#">INGENIERIA INDUSTRIAL</a></li>
+            <li><a class="dropdown-item" href="#">BIOLOGIA</a></li>
+          </ul>
+        </div>
+      </div>
+      <!-- Valores ocultos para enviar con el formulario -->
+    <input type="hidden" name="campus" id="selectedCampus">
+    <input type="hidden" name="carrera" id="selectedCarrera">
+
+      <button type="submit" class="btn btn-success w-100">Registrar</button>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
