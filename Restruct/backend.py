@@ -7,6 +7,10 @@ from supabase import create_client, Client
 from sentence_transformers import SentenceTransformer
 from keybert import KeyBERT
 from sklearn.metrics.pairwise import cosine_similarity
+from register import app as Register
+from fastapi.middleware.cors import CORSMiddleware
+
+
 
 #Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://ibecmvmtlndaonohzxce.supabase.co")
@@ -96,6 +100,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.mount("/Register", Register)
+
 @app.post("/procesar-ticket", response_model=TicketProcessResponse)
 async def procesar_ticket_endpoint(request: TicketProcessRequest):
     """
@@ -154,3 +160,19 @@ async def procesar_ticket_endpoint(request: TicketProcessRequest):
 @app.get("/")
 async def root():
     return {"message": "Servidor del Agente Experto está en línea y listo para recibir tickets."}
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://192.168.1.64", # O la IP de tu PC que tiene el frontend
+    "http://192.168.1.64:3000",
+    "*" # Permite todos los orígenes (para desarrollo)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite peticiones desde cualquier origen
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos (POST, GET, etc.)
+    allow_headers=["*"],  # Permite todos los encabezados
+)
