@@ -8,7 +8,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 // Cliente de Supabase
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const FASTAPI_BACKEND_URL = 'http://localhost:8000'; 
+const FASTAPI_BACKEND_URL = 'http://192.168.1.65:8000'; 
 
 
 // Validación del Formulario 
@@ -110,7 +110,7 @@ function Register({ onRegister }) {
       try {
         // --- Conexión con tu backend de FastAPI ---
         console.log('Enviando datos a FastAPI para el registro...');
-        const response = await fetch(`${FASTAPI_BACKEND_URL}/register`, {
+        const response = await fetch(`${FASTAPI_BACKEND_URL}/Register/procesar-datos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

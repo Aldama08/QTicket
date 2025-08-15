@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
-// 1. Se importa la función para crear el cliente de Supabase
 import { createClient } from '@supabase/supabase-js';
 import './page.css';
-// --- CONFIGURACIÓN DE SUPABASE INTEGRADA ---
-// Datos extraídos de tu backend
+// --- CONFIGURACIÓN DE SUPABASE ---
 const supabaseUrl = 'https://ibecmvmtlndaonohzxce.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZWNtdm10bG5kYW9ub2h6eGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MTA4NzQsImV4cCI6MjA1MzM4Njg3NH0.XBLqtGUJ3bPjrDgM6ZifZoJGOponRjfhd9YzFJ6yrL0';
-// Se crea la instancia del cliente que el resto del código usará
 const supabase = createClient(supabaseUrl, supabaseKey);
-// --- FIN DE LA CONFIGURACIÓN ---
-
-// 🔴 ¡IMPORTANTE! Reemplaza esto con la URL donde tu backend de FastAPI está corriendo.
-const FASTAPI_BACKEND_URL = 'http://localhost:8000'; // O la URL de producción
+const FASTAPI_BACKEND_URL = 'http://192.168.1.65:8000';
 
 function HelpDeskIA() {
   const [descripcion, setDescripcion] = useState('');
@@ -83,9 +77,9 @@ function HelpDeskIA() {
   const renderButtonText = () => {
     switch (status) {
       case 'creating':
-        return '🎟️ Creando ticket...';
+        return 'Creando ticket...';
       case 'processing':
-        return '🧠 Analizando con IA...';
+        return 'Analizando con IA...';
       case 'success':
       case 'error':
         return 'Crear otro ticket';
