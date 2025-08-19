@@ -1,12 +1,8 @@
 import os
-import numpy as np
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 import uuid
 from supabase import create_client, Client 
-from sentence_transformers import SentenceTransformer
-from keybert import KeyBERT
-from sklearn.metrics.pairwise import cosine_similarity
 #Hola
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://ibecmvmtlndaonohzxce.supabase.co")
@@ -50,7 +46,7 @@ async def procesar_datos_endpoint(request: createPerson): #Como el cliente debe 
         response = supabase.table('usuarios').insert(new_data).execute()
 
         if response.data:
-            return personResponse(**response.data[0])
+            return personResponse(**response.data[0])  #** desempaqueta lo que va a insertar  de respuesta, esto en una lista ya que es el [id, email, nombre y rol], el cual pasa a personResponse
 
         raise HTTPException(status_code=500, detail="Error interno del servidor, no se pudo registrar al usuario.")
 
