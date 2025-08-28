@@ -1,6 +1,8 @@
 import React from 'react';
 import { useState } from 'react'; 
 import { createClient } from '@supabase/supabase-js'; 
+import  './register.css';
+import logo from './media/logo.jpg';
 
 // Configuración de Supabase 
 const supabaseUrl = 'https://ibecmvmtlndaonohzxce.supabase.co';
@@ -139,36 +141,76 @@ function Register({ onRegister }) {
   };
   // --- Renderizado del Componente ---
   return (
-    <div>
-      <h2>Página de Registro</h2>
-      <form onSubmit={handleFormSubmit}>
-        <div>
-          <label htmlFor="nombre">Nombre:</label>
-          <input type="text" id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} />
-          {errors.nombre && <p style={{ color: 'red' }}>{errors.nombre}</p>}
-        </div>
-        
-        <div>
-          <label htmlFor="email">Correo Electrónico:</label>
-          <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} />
-          {errors.email && <p style={{ color: 'red' }}>{errors.email}</p>}
-        </div>
-        
-        <div>
-          <label htmlFor="rol">Rol:</label>
-          <input type="text" id="rol" name="rol" value={formData.rol} onChange={handleChange} />
-          {errors.rol && <p style={{ color: 'red' }}>{errors.rol}</p>}
-        </div>
-
-        {errors.general && <p style={{ color: 'red' }}>{errors.general}</p>}
-        
-        {/* El botón está deshabilitado si el formulario se está enviando */}
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Registrando...' : 'Registrarse'}
-        </button>
-      </form>
+    <div className="auth-page">
+      <div className="auth-overlay" />
+      <main className="auth-container">
+        <section className="auth-card" role="dialog" aria-labelledby="register-title" aria-describedby="register-desc">
+          <img src={logo} alt="QTicket" className="brand" />
+          <h2 id="register-title" className="auth-title">Crea tu cuenta</h2>
+          <p id="register-desc" className="auth-subtitle">Completa tus datos para continuar</p>
+  
+          <form onSubmit={handleFormSubmit} className="auth-form" noValidate>
+            <div className="form-group">
+              <label htmlFor="nombre">Nombre</label>
+              <input
+                className={`input ${errors.nombre ? 'input-error' : ''}`}
+                type="text"
+                id="nombre"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleChange}
+                aria-invalid={!!errors.nombre}
+                aria-describedby={errors.nombre ? 'err-nombre' : undefined}
+                autoComplete="name"
+                placeholder='Edrick Aguilar Ramírez'
+              />
+              {errors.nombre && <p id="err-nombre" className="error-text">{errors.nombre}</p>}
+            </div>
+  
+            <div className="form-group">
+              <label htmlFor="email">Correo electrónico</label>
+              <input
+                className={`input ${errors.email ? 'input-error' : ''}`}
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'err-email' : undefined}
+                autoComplete="email"
+                placeholder='edrick2345@alumnos.udg.mx'
+              />
+              {errors.email && <p id="err-email" className="error-text">{errors.email}</p>}
+            </div>
+  
+            <div className="form-group">
+              <label htmlFor="rol">Rol</label>
+              <input
+                className={`input ${errors.rol ? 'input-error' : ''}`}
+                type="text"
+                id="rol"
+                name="rol"
+                value={formData.rol}
+                onChange={handleChange}
+                aria-invalid={!!errors.rol}
+                aria-describedby={errors.rol ? 'err-rol' : undefined}
+                autoComplete="organization-title"
+                placeholder='Estudiante'
+              />
+              {errors.rol && <p id="err-rol" className="error-text">{errors.rol}</p>}
+            </div>
+  
+            {errors.general && <p className="error-banner">{errors.general}</p>}
+  
+            <button type="submit" className="btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Registrando…' : 'Registrarse'}
+            </button>
+          </form>
+        </section>
+      </main>
     </div>
-  );
+  );  
 }
 
 export default Register;
