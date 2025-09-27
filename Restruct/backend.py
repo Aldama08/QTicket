@@ -3,25 +3,24 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 import uuid
-from supabase import create_client, Client 
+from supabase import create_client, Client
 from sentence_transformers import SentenceTransformer
 from keybert import KeyBERT
 from sklearn.metrics.pairwise import cosine_similarity
+from fastapi.middleware.cors import CORSMiddleware
+import ast # Necesario para leer los embeddings de la DB
 
-#Supabase
+# --- CONFIGURACIÓN ---
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://ibecmvmtlndaonohzxce.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZWNtdm10bG5kYW9ub2h6eGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MTA4NzQsImV4cCI6MjA1MzM4Njg3NH0.XBLqtGUJ3bPjrDgM6ZifZoJGOponRjfhd9YzFJ6yrL0")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZWNtdm10bG5kYW9ub2h6eGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MTA4NzQsImV4cCI6MjA1MzM4Njg3NH0.XBLqtGUJ3bPjrDgM6ZifZoJGOponRjfhd9YzFJ6yrL0")
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     print("✅ Conexión con Supabase establecida.")
 except Exception as e:
     print(f"❌ Error fatal al conectar con Supabase: {e}")
-    # En un caso real, el programa debería terminar si no hay DB.
     exit()
 
-
-# Carga modelos IA
-MODELO_SBERT = "paraphrase-multilingual-mpnet-base-v2" 
+MODELO_SBERT = "paraphrase-multilingual-mpnet-base-v2"
 print(f"🧠 Cargando modelo de embeddings: '{MODELO_SBERT}'...")
 embedding_model = SentenceTransformer(MODELO_SBERT)
 print("🧠 Cargando modelo de keywords (KeyBERT)...")
@@ -29,128 +28,165 @@ kw_model = KeyBERT(model=embedding_model)
 print("✅ Modelos de IA listos.")
 
 
-# Pydantic
-# Definen la estructura de las peticiones y respuestas de la API
+# IA 
+async def encontrar_solucion_semantica(descripcion_usuario: str) -> str:
+    print("🔎 Buscando solución en la base de conocimientos...")
+    try:
+        response = supabase.table('knowledge_base').select('solucion, embedding').execute()
+        knowledge_data = response.data
+        if not knowledge_data:
+            return "Hemos recibido tu ticket. Un agente humano lo revisará pronto."
+    except Exception as e:
+        print(f"❌ Error al consultar la base de conocimientos: {e}")
+        return "No pudimos consultar las soluciones existentes."
 
-class TicketProcessRequest(BaseModel):
-    # El frontend solo necesita enviar el ID del ticket que se acaba de crear, creo
-    ticket_id: uuid.UUID = Field(..., description="El ID único del ticket a procesar.")
+    # Convierte el string del embedding de la DB a una lista de Python si es necesario
+    known_embeddings = np.array([ast.literal_eval(item['embedding']) if isinstance(item['embedding'], str) else item['embedding'] for item in knowledge_data])
+    soluciones = [item['solucion'] for item in knowledge_data]
+    user_embedding = embedding_model.encode([descripcion_usuario])
+    similarities = cosine_similarity(user_embedding, known_embeddings)
+    best_match_index = np.argmax(similarities)
+    max_similarity = similarities[0][best_match_index]
+    print(f"📊 Similitud máxima encontrada: {max_similarity:.2f}")
 
-class TicketProcessResponse(BaseModel):
+    if max_similarity >= 0.70:
+        return soluciones[best_match_index]
+    else:
+        return "Hemos recibido tu ticket. Un agente humano lo revisará pronto."
+
+
+# MODELOS PYDANTIC 
+class TicketCompletoRequest(BaseModel):
+    email: str
+    nombre: str
+    rol: str
+    descripcion: str
+
+class TicketCompletoResponse(BaseModel):
     status: str
     ticket_id: uuid.UUID
     solucion_sugerida: str
     keywords_extraidas: list[str]
 
-
-# Lógica Agente Experto 
-
-async def encontrar_solucion_semantica(descripcion_usuario: str) -> str:
-    """
-    Busca en la tabla `knowledge_base` la solución más relevante usando similitud de embeddings.
-    Esta función es el nuevo "cerebro" del agente.
-    """
-    print("🔎 Buscando solución en la base de conocimientos...")
-    # 1. Obtener la base de conocimientos de Supabase
-    # Tener una tabla `knowledge_base` con `problema_resumen`, `solucion` y `embedding`
-    try:
-        response = supabase.table('knowledge_base').select('solucion, embedding').execute()
-        knowledge_data = response.data
-        if not knowledge_data:
-            print("⚠️ Advertencia: La base de conocimientos está vacía.")
-            return "Hemos recibido tu ticket. Un agente humano lo revisará pronto."
-    except Exception as e:
-        print(f"❌ Error al consultar la base de conocimientos: {e}")
-        return "No pudimos consultar las soluciones existentes. Tu ticket ha sido registrado para revisión manual."
-
-    # Extraer embeddings y soluciones
-    known_embeddings = np.array([item['embedding'] for item in knowledge_data])
-    soluciones = [item['solucion'] for item in knowledge_data]
-
-    # Convertir la descripción del usuario en un embedding
-    user_embedding = embedding_model.encode([descripcion_usuario])
-
-    # Calcular la similitud del coseno entre el problema del usuario y todos los problemas conocidos
-    similarities = cosine_similarity(user_embedding, known_embeddings)
-
-    # Encontrar la mejor coincidencia
-    best_match_index = np.argmax(similarities)
-    max_similarity = similarities[0][best_match_index]
-    print(f"📊 Similitud máxima encontrada: {max_similarity:.2f}")
-
-    #  Decidir si la similitud es suficiente para dar una respuesta
-    UMBRAL_CONFIANZA = 0.70  # Se puede ajustar 
-    if max_similarity >= UMBRAL_CONFIANZA:
-        print(f"✅ Coincidencia encontrada con confianza. Devolviendo solución.")
-        return soluciones[best_match_index]
-    else:
-        print(f"🤔 La similitud está por debajo del umbral. Devolviendo respuesta por defecto.")
-        return "Hemos recibido tu ticket. Un agente humano lo revisará pronto."
+class TicketResueltoRequest(BaseModel):
+    ticket_id: uuid.UUID
+    solucion_final: str = Field(..., description="La solución correcta escrita por el agente humano.")
 
 
-# Endpoint con FastAPI 
-
+# FASTAPI 
 app = FastAPI(
-    title="API del Agente Experto para Help Desk",
-    description="Procesa un ticket, lo enriquece con IA y busca una solución automática.",
-    version="1.0.0"
+    title="API Unificada de Help Desk con IA",
+    version="2.0.0"
 )
 
-@app.post("/procesar-ticket", response_model=TicketProcessResponse)
-async def procesar_ticket_endpoint(request: TicketProcessRequest):
-    """
-    Endpoint principal para procesar un ticket.
-    """
-    ticket_id = request.ticket_id
-    print(f"\n--- 📩 Procesando nuevo ticket ID: {ticket_id} ---")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Para desarrollo. En producción, cámbialo a la URL de tu front-end.
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    # Obtener la descripción del ticket de la BD
-    try:
-        response = supabase.table('tickets').select('descripcion').eq('id', str(ticket_id)).single().execute()
-        descripcion = response.data.get('descripcion')
-        if not descripcion:
-            raise HTTPException(status_code=404, detail=f"Ticket con ID {ticket_id} no encontrado o sin descripción.")
-    except Exception as e:
-        print(f"❌ Error al obtener el ticket: {e}")
-        raise HTTPException(status_code=500, detail=f"Error de base de datos al buscar el ticket: {e}")
-
-    # Extraer palabras clave con KeyBERT
-    print("🔑 Extrayendo palabras clave...")
-    keywords = kw_model.extract_keywords(
-        descripcion,
-        keyphrase_ngram_range=(1, 2),
-        stop_words='spanish', 
-        use_mmr=True,
-        diversity=0.7,
-        top_n=5
-    )
-    keywords_extraidas = [kw[0] for kw in keywords]
-    print(f"🔍 Palabras clave detectadas: {keywords_extraidas}")
-
-    # Encontrar la solución usando el nuevo agente semántico
-    solucion_sugerida = await encontrar_solucion_semantica(descripcion)
-
-    # Actualizar el ticket original en la BD con los resultados
-    print("💾 Actualizando el ticket en la base de datos...")
-    try:
-        supabase.table('tickets').update({
-            'solucion_sugerida': solucion_sugerida,
-            'keywords_detectadas': keywords_extraidas, 
-            'estado': 'analizado_por_ia' 
-        }).eq('id', str(ticket_id)).execute()
-    except Exception as e:
-        # Resgistro de la falla, si es que la hay
-        print(f"⚠️ Error al actualizar el ticket {ticket_id}: {e}")
-        # No lanzamos una excepción HTTP para que el usuario igual reciba la respuesta.
-
-    # Devolver una respuesta completa al frontend
-    return TicketProcessResponse(
-        status="Procesado exitosamente",
-        ticket_id=ticket_id,
-        solucion_sugerida=solucion_sugerida,
-        keywords_extraidas=keywords_extraidas
-    )
 
 @app.get("/")
 async def root():
-    return {"message": "Servidor del Agente Experto está en línea y listo para recibir tickets."}
+    return {"message": "Servidor del Agente Experto está en línea."}
+
+
+# --- ENDPOINT UNIFICADO ---
+@app.post("/crear-y-procesar-ticket", response_model=TicketCompletoResponse)
+async def crear_y_procesar_ticket(request: TicketCompletoRequest):
+    """
+    Este endpoint hace todo en una sola llamada.
+    """
+    print(f"\n--- 📩 Iniciando nuevo flujo para: {request.email} ---")
+    try:
+        # PASO 1: MANEJAR AL USUARIO (OBTENER O CREAR)
+        user_response = supabase.table('usuarios').select('id').eq('email', request.email).execute()
+        
+        if user_response.data:
+            usuario_id = user_response.data[0]['id']
+            print(f"👤 Usuario existente encontrado: {usuario_id}")
+        else:
+            new_user_data = {'email': request.email, 'nombre': request.nombre, 'rol': request.rol}
+            insert_user_response = supabase.table('usuarios').insert(new_user_data).select('id').single().execute()
+            usuario_id = insert_user_response.data['id']
+            print(f"👤 Usuario nuevo creado: {usuario_id}")
+
+        # PASO 2: CREAR EL TICKET Y ENLAZARLO
+        ticket_data = {'descripcion': request.descripcion, 'usuario_id': usuario_id}
+        insert_ticket_response = supabase.table('tickets').insert(ticket_data).select('id').single().execute()
+        ticket_id = insert_ticket_response.data['id']
+        print(f"🎫 Ticket nuevo creado con ID: {ticket_id}")
+
+        # PASO 3: EJECUTAR EL ANÁLISIS DE IA
+        print(f"🧠 Ejecutando análisis de IA...")
+        solucion_sugerida = await encontrar_solucion_semantica(request.descripcion)
+        keywords_obj = kw_model.extract_keywords(request.descripcion, keyphrase_ngram_range=(1, 2), stop_words='spanish', use_mmr=True, diversity=0.7, top_n=5)
+        keywords_extraidas = [kw[0] for kw in keywords_obj]
+        print(f"🔍 Palabras clave detectadas: {keywords_extraidas}")
+
+        # PASO 4: ACTUALIZAR EL TICKET CON LOS RESULTADOS
+        supabase.table('tickets').update({
+            'solucion_sugerida': solucion_sugerida,
+            'keywords_detectadas': keywords_extraidas,
+            'estado': 'analizado_por_ia'
+        }).eq('id', str(ticket_id)).execute()
+        print("💾 Ticket actualizado con el análisis.")
+        
+        # PASO 5: DEVOLVER LA RESPUESTA FINAL
+        return TicketCompletoResponse(
+            status="Ticket procesado exitosamente por la IA",
+            ticket_id=ticket_id,
+            solucion_sugerida=solucion_sugerida,
+            keywords_extraidas=keywords_extraidas
+        )
+    except Exception as e:
+        print(f"❌ Error en el flujo completo: {e}")
+        raise HTTPException(status_code=500, detail=f"Ocurrió un error en el servidor: {e}")
+    
+
+# En tu archivo de FastAPI, debajo de tu otro endpoint
+
+@app.post("/resolver-y-entrenar")
+async def resolver_y_entrenar(request: TicketResueltoRequest):
+    """
+    Endpoint para que un agente humano marque un ticket como resuelto
+    y, crucialmente, entrene la base de conocimientos con la nueva solución.
+    """
+    print(f"\n--- 🎓 Entrenando el sistema con el ticket ID: {request.ticket_id} ---")
+    try:
+        # --- PASO A: OBTENER LA DESCRIPCIÓN ORIGINAL DEL PROBLEMA ---
+        ticket_response = supabase.table('tickets').select('descripcion').eq('id', str(request.ticket_id)).single().execute()
+        if not ticket_response.data:
+            raise HTTPException(status_code=404, detail="El ticket a entrenar no fue encontrado.")
+        
+        descripcion_original = ticket_response.data['descripcion']
+
+        # --- PASO B: ACTUALIZAR EL TICKET A "RESUELTO" ---
+        supabase.table('tickets').update({
+            'solucion_final': request.solucion_final,
+            'estado': 'resuelto_por_humano'
+        }).eq('id', str(request.ticket_id)).execute()
+        print("✅ Ticket marcado como resuelto.")
+
+        # --- PASO C: "ALIMENTAR" LA BASE DE CONOCIMIENTOS ---
+        # 1. Generar el embedding para la descripción original del problema
+        print("🧠 Generando embedding para el nuevo conocimiento...")
+        nuevo_embedding = embedding_model.encode([descripcion_original]).tolist()[0]
+
+        # 2. Preparar el nuevo registro de conocimiento
+        nuevo_conocimiento = {
+            'embedding': str(nuevo_embedding), # Guardarlo como string es más robusto
+            'solucion': request.solucion_final # La solución correcta del humano
+        }
+
+        # 3. Insertar el nuevo conocimiento en la base
+        supabase.table('knowledge_base').insert(nuevo_conocimiento).execute()
+        print("✅ ¡Base de conocimientos actualizada con la nueva solución!")
+
+        return {"status": "success", "message": "El ticket fue resuelto y la base de conocimientos ha sido entrenada."}
+
+    except Exception as e:
+        print(f"❌ Error durante el entrenamiento: {e}")
+        raise HTTPException(status_code=500, detail=f"Ocurrió un error: {e}")

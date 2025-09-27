@@ -5,23 +5,25 @@ import HelpDeskIA from './page';
 import Register from './register';
 
 function App() {
-  // Estado para saber si el usuario se ha registrado.
-  const [isRegistered, setIsRegistered] = useState(false);
+  // null ya que no hay ningun usuario, hace que sea un objeto que guarde los datos del usuario como objeto. Siendo userData email, nombre, rol
+  const [userData, setuserData] = useState(null);
 
-  const handleRegister = () => {
-    // Al llamar a esta función, el estado cambia a `true`
-    setIsRegistered(true);
+  const handleRegister = (datosUsuario) => {
+    setuserData(datosUsuario);
   };
 
   return (
-    <div>
-      {/* Si `isRegistered` es `false`, muestra el componente de registro. */}
-      {!isRegistered ? (
-        <Register onRegister={handleRegister} />
-      ) : (
-        // Si `isRegistered` es `true`, muestra el componente principal.
-        <HelpDeskIA />
-      )}
+    <div className="App">
+      {
+        // 3. La condición ahora es: si NO hay datos de usuario (`userData` es `null`)...
+        !userData ? (
+          // ...muestra el componente de registro y pásale la función.
+          <Register onRegister={handleRegister} />
+        ) : (
+          // 4. Si SÍ hay datos de usuario, muestra el componente del Help Desk
+          <HelpDeskIA userData={userData} />
+        )
+      }
     </div>
   );
 }
