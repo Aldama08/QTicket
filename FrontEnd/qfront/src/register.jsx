@@ -31,7 +31,6 @@ function Register({ onRegister }) {
       onRegister(formData);
     }
   };
-
   return (
     <div className="auth-page">
       <div className="auth-overlay" />
@@ -63,7 +62,7 @@ function Register({ onRegister }) {
         </section>
       </main>
     </div>
-  );
+  );  
 }
 
 export default Register;

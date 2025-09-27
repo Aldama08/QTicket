@@ -7,10 +7,12 @@ from supabase import create_client, Client
 from sentence_transformers import SentenceTransformer
 from keybert import KeyBERT
 from sklearn.metrics.pairwise import cosine_similarity
+from register import app as Register
 from fastapi.middleware.cors import CORSMiddleware
-import ast # Necesario para leer los embeddings de la DB
+from typing import Optional
+import ast
 
-# --- CONFIGURACIÓN ---
+# Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://ibecmvmtlndaonohzxce.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZWNtdm10bG5kYW9ub2h6eGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MTA4NzQsImV4cCI6MjA1MzM4Njg3NH0.XBLqtGUJ3bPjrDgM6ZifZoJGOponRjfhd9YzFJ6yrL0")
 try:
@@ -72,6 +74,24 @@ class TicketResueltoRequest(BaseModel):
     ticket_id: uuid.UUID
     solucion_final: str = Field(..., description="La solución correcta escrita por el agente humano.")
 
+async def transferir_conocimiento_a_db(descripcion: str, solucion: str):
+    """
+    Función reutilizable para transferir la descripción y solución a la base de conocimiento.
+    """
+    try:
+        print(f"📊 Generando embedding para el conocimiento...")
+        problema_embedding = embedding_model.encode([descripcion]).tolist()[0]
+        
+        new_knowledge = {
+            'solucion': solucion,
+            'embedding': problema_embedding
+        }
+        
+        supabase.table('knowledge_base').insert(new_knowledge).execute()
+        print(f"✅ Conocimiento guardado exitosamente en `knowledge_base`.")
+    except Exception as e:
+        print(f"❌ Error al guardar el conocimiento: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al guardar el conocimiento: {e}")
 
 # FASTAPI 
 app = FastAPI(
