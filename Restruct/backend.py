@@ -7,14 +7,14 @@ from supabase import create_client, Client
 from sentence_transformers import SentenceTransformer
 from keybert import KeyBERT
 from sklearn.metrics.pairwise import cosine_similarity
-from register import app as Register
+# from register import app as Register
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import ast
 
 # Supabase
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://ibecmvmtlndaonohzxce.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZWNtdm10bG5kYW9ub2h6eGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MTA4NzQsImV4cCI6MjA1MzM4Njg3NH0.XBLqtGUJ3bPjrDgM6ZifZoJGOponRjfhd9YzFJ6yrL0")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZWNtdm10bG5kYW9ub2h6eGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MTA4NzQsImV4cCI6MjA1MzM4Njg3NH0.XBLqtGUJ3bPjrDgM6ZifZoJGOponRjfhd9YzFJ6yrL0")
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     print("✅ Conexión con Supabase establecida.")
@@ -58,40 +58,34 @@ async def encontrar_solucion_semantica(descripcion_usuario: str) -> str:
 
 
 # MODELOS PYDANTIC 
-class TicketCompletoRequest(BaseModel):
-    email: str
-    nombre: str
-    rol: str
+class TicketSimpleRequest(BaseModel):
+    usuario_id: uuid.UUID
     descripcion: str
 
+# Modelo de respuesta para el ticket procesado (sin cambios)
 class TicketCompletoResponse(BaseModel):
     status: str
-    ticket_id: uuid.UUID
+    ticket_id: str
     solucion_sugerida: str
     keywords_extraidas: list[str]
 
+# Modelo para cuando un agente resuelve un ticket (sin cambios)
 class TicketResueltoRequest(BaseModel):
     ticket_id: uuid.UUID
     solucion_final: str = Field(..., description="La solución correcta escrita por el agente humano.")
 
-async def transferir_conocimiento_a_db(descripcion: str, solucion: str):
-    """
-    Función reutilizable para transferir la descripción y solución a la base de conocimiento.
-    """
-    try:
-        print(f"📊 Generando embedding para el conocimiento...")
-        problema_embedding = embedding_model.encode([descripcion]).tolist()[0]
-        
-        new_knowledge = {
-            'solucion': solucion,
-            'embedding': problema_embedding
-        }
-        
-        supabase.table('knowledge_base').insert(new_knowledge).execute()
-        print(f"✅ Conocimiento guardado exitosamente en `knowledge_base`.")
-    except Exception as e:
-        print(f"❌ Error al guardar el conocimiento: {e}")
-        raise HTTPException(status_code=500, detail=f"Error al guardar el conocimiento: {e}")
+# Modelos para el endpoint de validación de usuario (sin cambios)
+class UserRequest(BaseModel):
+    email: str
+    nombre: str
+    rol: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    nombre: str
+    rol: str
+
 
 # FASTAPI 
 app = FastAPI(
@@ -114,57 +108,67 @@ async def root():
 
 
 # --- ENDPOINT UNIFICADO ---
-@app.post("/crear-y-procesar-ticket", response_model=TicketCompletoResponse)
-async def crear_y_procesar_ticket(request: TicketCompletoRequest):
-    """
-    Este endpoint hace todo en una sola llamada.
-    """
-    print(f"\n--- 📩 Iniciando nuevo flujo para: {request.email} ---")
+@app.post("/registrar-o-validar-usuario", response_model=UserResponse)
+async def registrar_o_validar_usuario(request: UserRequest):
+    # ...
     try:
-        # PASO 1: MANEJAR AL USUARIO (OBTENER O CREAR)
-        user_response = supabase.table('usuarios').select('id').eq('email', request.email).execute()
-        
-        if user_response.data:
-            usuario_id = user_response.data[0]['id']
-            print(f"👤 Usuario existente encontrado: {usuario_id}")
-        else:
-            new_user_data = {'email': request.email, 'nombre': request.nombre, 'rol': request.rol}
-            insert_user_response = supabase.table('usuarios').insert(new_user_data).select('id').single().execute()
-            usuario_id = insert_user_response.data['id']
-            print(f"👤 Usuario nuevo creado: {usuario_id}")
+        user_response = supabase.table('usuarios').select('*').eq('email', request.email).single().execute()
+        print(f"Usuario existente encontrado.")
+        return UserResponse(**user_response.data)
 
+    except Exception as e:
+        print(f"Usuario nuevo. Creando registro...")
+        new_user_data = request.model_dump()
+        # --- LÍNEA CORREGIDA ---
+        insert_response = supabase.table('usuarios').insert(new_user_data).execute()
+        
+        if insert_response.data:
+            return UserResponse(**insert_response.data)
+        else:
+            raise HTTPException(status_code=500, detail="No se pudo registrar al nuevo usuario.")
+
+@app.post("/crear-y-procesar-ticket", response_model=TicketCompletoResponse)
+async def crear_y_procesar_ticket(request: TicketSimpleRequest): # Usa el nuevo modelo
+    """
+    Este endpoint ahora solo necesita el ID del usuario y la descripción
+    porque el usuario ya fue validado en el paso anterior.
+    """
+    print(f"\n--- 📩 Creando y procesando ticket para el usuario ID: {request.usuario_id} ---")
+    try:
+        # PASO 1: YA NO ES NECESARIO BUSCAR AL USUARIO. ¡LO HEMOS SIMPLIFICADO!
+        
         # PASO 2: CREAR EL TICKET Y ENLAZARLO
-        ticket_data = {'descripcion': request.descripcion, 'usuario_id': usuario_id}
-        insert_ticket_response = supabase.table('tickets').insert(ticket_data).select('id').single().execute()
-        ticket_id = insert_ticket_response.data['id']
+        ticket_data = {
+            'descripcion': request.descripcion,
+            'usuario_id': str(request.usuario_id) # Usamos el ID directamente
+        }
+        insert_ticket_response = supabase.table('tickets').insert(ticket_data).execute()
+        ticket_id = insert_ticket_response.data[0]['id']
         print(f"🎫 Ticket nuevo creado con ID: {ticket_id}")
 
-        # PASO 3: EJECUTAR EL ANÁLISIS DE IA
+        # PASO 3: EJECUTAR EL ANÁLISIS DE IA (sin cambios)
         print(f"🧠 Ejecutando análisis de IA...")
         solucion_sugerida = await encontrar_solucion_semantica(request.descripcion)
         keywords_obj = kw_model.extract_keywords(request.descripcion, keyphrase_ngram_range=(1, 2), stop_words='spanish', use_mmr=True, diversity=0.7, top_n=5)
         keywords_extraidas = [kw[0] for kw in keywords_obj]
-        print(f"🔍 Palabras clave detectadas: {keywords_extraidas}")
-
-        # PASO 4: ACTUALIZAR EL TICKET CON LOS RESULTADOS
+        
+        # PASO 4: ACTUALIZAR EL TICKET CON LOS RESULTADOS (sin cambios)
         supabase.table('tickets').update({
             'solucion_sugerida': solucion_sugerida,
             'keywords_detectadas': keywords_extraidas,
             'estado': 'analizado_por_ia'
         }).eq('id', str(ticket_id)).execute()
-        print("💾 Ticket actualizado con el análisis.")
         
-        # PASO 5: DEVOLVER LA RESPUESTA FINAL
+        # PASO 5: DEVOLVER LA RESPUESTA FINAL (sin cambios)
         return TicketCompletoResponse(
-            status="Ticket procesado exitosamente por la IA",
+            status="Ticket procesado exitosamente",
             ticket_id=ticket_id,
             solucion_sugerida=solucion_sugerida,
             keywords_extraidas=keywords_extraidas
         )
     except Exception as e:
-        print(f"❌ Error en el flujo completo: {e}")
+        print(f"❌ Error en el flujo: {e}")
         raise HTTPException(status_code=500, detail=f"Ocurrió un error en el servidor: {e}")
-    
 
 # En tu archivo de FastAPI, debajo de tu otro endpoint
 
