@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './page.css';
 
-const FASTAPI_BACKEND_URL = 'http://192.168.1.65:8000';
+const FASTAPI_BACKEND_URL = 'http://127.0.0.1:8000';
 
 // Recibe los datos del usuario como "props" desde App.js
 function Page({ userData }) {
@@ -18,36 +18,34 @@ function Page({ userData }) {
     setError('');
     setResultado(null);
 
-    // Combina los datos del usuario (de props) con la descripción (de state)
     const fullTicketData = {
-      ...userData,
-      descripcion: descripcion,
+    usuario_id: userData.id, 
+    descripcion: descripcion,
     };
 
+    console.log("Enviando Ticket Data:", fullTicketData); 
     try {
-      // Llama al backend UNIFICADO con TODOS los datos
-      const response = await fetch(`${FASTAPI_BACKEND_URL}/crear-y-procesar-ticket`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fullTicketData),
-      });
+     // Llama al backend UNIFICADO con TODOS los datos
+    const response = await fetch(`${FASTAPI_BACKEND_URL}/crear-y-procesar-ticket`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fullTicketData),
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || 'Ocurrió un error');
+  }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Ocurrió un error');
-      }
-
-      const dataResultado = await response.json();
-      setResultado(dataResultado);
-      setStatus('success');
-
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-      setStatus('error');
-    }
-  };
-
+  const dataResultado = await response.json();
+  setResultado(dataResultado);
+  setStatus('success');
+ } catch (err) {
+  console.error(err);
+  setError(err.message);
+  setStatus('error');
+  }
+};
   const resetForm = () => {
     setDescripcion('');
     setStatus('idle');

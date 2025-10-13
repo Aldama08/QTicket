@@ -59,7 +59,7 @@ async def encontrar_solucion_semantica(descripcion_usuario: str) -> str:
 
 # MODELOS PYDANTIC 
 class TicketSimpleRequest(BaseModel):
-    usuario_id: uuid.UUID
+    usuario_id: str
     descripcion: str
 
 # Modelo de respuesta para el ticket procesado (sin cambios)
@@ -71,7 +71,7 @@ class TicketCompletoResponse(BaseModel):
 
 # Modelo para cuando un agente resuelve un ticket (sin cambios)
 class TicketResueltoRequest(BaseModel):
-    ticket_id: uuid.UUID
+    ticket_id: str
     solucion_final: str = Field(..., description="La solución correcta escrita por el agente humano.")
 
 # Modelos para el endpoint de validación de usuario (sin cambios)
@@ -140,7 +140,7 @@ async def crear_y_procesar_ticket(request: TicketSimpleRequest): # Usa el nuevo 
         # PASO 2: CREAR EL TICKET Y ENLAZARLO
         ticket_data = {
             'descripcion': request.descripcion,
-            'usuario_id': str(request.usuario_id) # Usamos el ID directamente
+            'usuario_id': (request.usuario_id) # Usamos el ID directamente
         }
         insert_ticket_response = supabase.table('tickets').insert(ticket_data).execute()
         ticket_id = insert_ticket_response.data[0]['id']
