@@ -12,7 +12,7 @@ const validateForm = (formData) => {
 };
 
 // Recibe la función onRegister desde App.js
-function Register({ onRegister }) {
+function Register({ onRegister, loading }) {
   const [formData, setFormData] = useState({ email: '', nombre: '', rol: '' });
   const [errors, setErrors] = useState({});
 

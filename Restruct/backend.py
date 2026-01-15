@@ -110,22 +110,32 @@ async def root():
 # --- ENDPOINT UNIFICADO ---
 @app.post("/registrar-o-validar-usuario", response_model=UserResponse)
 async def registrar_o_validar_usuario(request: UserRequest):
-    # ...
     try:
-        user_response = supabase.table('usuarios').select('*').eq('email', request.email).single().execute()
-        print(f"Usuario existente encontrado.")
-        return UserResponse(**user_response.data)
+        # Intenta buscar al usuario
+        user_response = supabase.table('usuarios').select('*').eq('email', request.email).execute()
+        
+        # Si existe (la lista no está vacía)
+        if user_response.data:
+            print(f"Usuario existente encontrado.")
+            return UserResponse(**user_response.data[0]) # <--- Agregar [0]
 
     except Exception as e:
-        print(f"Usuario nuevo. Creando registro...")
-        new_user_data = request.model_dump()
-        # --- LÍNEA CORREGIDA ---
+        print(f"Error al buscar usuario: {e}")
+
+    # Si no existe, crear uno nuevo
+    print(f"Usuario nuevo o no encontrado. Creando registro...")
+    new_user_data = request.model_dump()
+    try:
         insert_response = supabase.table('usuarios').insert(new_user_data).execute()
         
         if insert_response.data:
-            return UserResponse(**insert_response.data)
+            # Supabase insert devuelve una lista, tomamos el primer elemento
+            return UserResponse(**insert_response.data[0]) # <--- Agregar [0]
         else:
             raise HTTPException(status_code=500, detail="No se pudo registrar al nuevo usuario.")
+    except Exception as e:
+        print(f"Error en inserción: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/crear-y-procesar-ticket", response_model=TicketCompletoResponse)
 async def crear_y_procesar_ticket(request: TicketSimpleRequest): # Usa el nuevo modelo

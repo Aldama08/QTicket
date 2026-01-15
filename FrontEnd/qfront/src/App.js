@@ -1,60 +1,50 @@
-// App.js
 import React, { useState } from 'react';
-
 import HelpDeskIA from './page';
 import Register from './register';
 
-const FASTAPI_BACKEND_URL = 'http://127.0.0.1:8000'
+const FASTAPI_BACKEND_URL = 'http://127.0.0.1:8000';
 
 function App() {
-  // null ya que no hay ningun usuario, hace que sea un objeto que guarde los datos del usuario como objeto. Siendo userData email, nombre, rol
   const [userData, setuserData] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false)
 
   const handleRegister = async (datosUsuario) => {
     setLoading(true);
     setError(null);
+    try {
+      const response = await fetch(`${FASTAPI_BACKEND_URL}/registrar-o-validar-usuario`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosUsuario),
+      });
+      if (!response.ok) throw new Error('Error en el registro');
+      const userResponseData = await response.json();
+      setuserData(userResponseData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-
-  try {
-  const response = await fetch(`${FASTAPI_BACKEND_URL}/registrar-o-validar-usuario`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  // Envía los datos del formulario (email, nombre, rol)
-  body: JSON.stringify(datosUsuario),
-  });
-
-  if (!response.ok) {
-  const errorData = await response.json();
-  throw new Error(errorData.detail || 'Fallo en la validación/registro del usuario.');
-  }
-
-  // 3. Guardar le respuesta del backend (que contiene el 'id')
-  const userResponseData = await response.json();
-  setuserData(userResponseData); // userResponseData ahora tiene el 'id'
-  } catch (err) {
-    console.error("Error en registro/login:", err);
-    setError(err.message);
-    setuserData(null); // Asegurar que no se muestre el HelpDesk si falla
-  } finally {
-    setLoading(false);
-  } 
-};
+  // Esta es la función que SÍ existe en App.js
+  const handleLogout = () => {
+    setuserData(null);
+  };
 
   return (
-    <div className="App">
-      {
-        // 3. La condición ahora es: si NO hay datos de usuario (`userData` es `null`)...
-        !userData ? (
-          // ...muestra el componente de registro y pásale la función.
-          <Register onRegister={handleRegister} />
+      <div className="App">
+        {!userData ? (
+            <Register onRegister={handleRegister} />
         ) : (
-          // 4. Si SÍ hay datos de usuario, muestra el componente del Help Desk
-          <HelpDeskIA userData={userData} />
-        )
-      }
-    </div>
+            /* REVISA ESTA LÍNEA:
+               Propiedad: onLogout
+               Valor: {handleLogout}
+            */
+            <HelpDeskIA userData={userData} onLogout={handleLogout} />
+        )}
+      </div>
   );
 }
 
