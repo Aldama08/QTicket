@@ -99,7 +99,7 @@ function Page({ userData, onLogout}) {
       </div>
 
       <h2 className="texto-central">Help Desk con Agente Experto</h2>
-      <p>Bienvenido, <strong>{userData.nombre}</strong>. Describe tu problema para obtener ayuda.</p>
+      <p className=''>Bienvenido, <strong>{userData.nombre}</strong>. Describe tu problema para obtener ayuda.</p>
       
       {status !== 'success' && (
         <form onSubmit={handleSubmit}>

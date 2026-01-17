@@ -28,7 +28,7 @@ function App() {
     }
   };
 
-  // Esta es la función que SÍ existe en App.js
+  // Función para cerrar sesión (ir atr)
   const handleLogout = () => {
     setuserData(null);
   };
@@ -38,10 +38,6 @@ function App() {
         {!userData ? (
             <Register onRegister={handleRegister} />
         ) : (
-            /* REVISA ESTA LÍNEA:
-               Propiedad: onLogout
-               Valor: {handleLogout}
-            */
             <HelpDeskIA userData={userData} onLogout={handleLogout} />
         )}
       </div>

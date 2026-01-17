@@ -11,35 +11,41 @@ from sklearn.metrics.pairwise import cosine_similarity
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import ast
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Supabase
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://ibecmvmtlndaonohzxce.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZWNtdm10bG5kYW9ub2h6eGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MTA4NzQsImV4cCI6MjA1MzM4Njg3NH0.XBLqtGUJ3bPjrDgM6ZifZoJGOponRjfhd9YzFJ6yrL0")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    print("✅ Conexión con Supabase establecida.")
+    print("Conexión con Supabase establecida.")
 except Exception as e:
     print(f"❌ Error fatal al conectar con Supabase: {e}")
     exit()
 
 MODELO_SBERT = "paraphrase-multilingual-mpnet-base-v2"
-print(f"🧠 Cargando modelo de embeddings: '{MODELO_SBERT}'...")
+print(f"Cargando modelo: '{MODELO_SBERT}'...")
 embedding_model = SentenceTransformer(MODELO_SBERT)
-print("🧠 Cargando modelo de keywords (KeyBERT)...")
+print("Cargando modelo de keywords (KeyBERT)...")
 kw_model = KeyBERT(model=embedding_model)
-print("✅ Modelos de IA listos.")
+print("Modelos de IA listos.")
 
 
 # IA 
 async def encontrar_solucion_semantica(descripcion_usuario: str) -> str:
-    print("🔎 Buscando solución en la base de conocimientos...")
+    print("Buscando solución en la base de conocimientos...")
     try:
         response = supabase.table('knowledge_base').select('solucion, embedding').execute()
         knowledge_data = response.data
         if not knowledge_data:
             return "Hemos recibido tu ticket. Un agente humano lo revisará pronto."
     except Exception as e:
-        print(f"❌ Error al consultar la base de conocimientos: {e}")
+        print(f"Error al consultar la base de conocimientos: {e}")
         return "No pudimos consultar las soluciones existentes."
 
     # Convierte el string del embedding de la DB a una lista de Python si es necesario
@@ -89,7 +95,7 @@ class UserResponse(BaseModel):
 
 # FASTAPI 
 app = FastAPI(
-    title="API Unificada de Help Desk con IA",
+    title="API Help Desk con IA",
     version="2.0.0"
 )
 
@@ -107,7 +113,38 @@ async def root():
     return {"message": "Servidor del Agente Experto está en línea."}
 
 
-# --- ENDPOINT UNIFICADO ---
+def sentEmail(nombre, descripcion):
+    remitente = os.getenv("EMAIL_USER")
+    password = os.getenv("EMAIL_PASSWORD")
+    destinatario = os.getenv("EMAIL_DESTINATARIO")
+    
+    msg = MIMEMultipart()
+    msg['From'] = remitente
+    msg['To'] = destinatario
+    msg['Subject'] = f"Nuevo Ticket: {nombre}"
+    
+    cuerpo = f"""
+    Se ha registrado un nuevo ticket en el sistema:
+    Usuario: {nombre}
+    Descripción: {descripcion}
+    
+    Hay que atenderlo pronto    
+    
+    """
+    msg.attach(MIMEText(cuerpo,'plain'))
+    try:
+        # Configuración del servidor con Gmail
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(remitente, password)
+        server.send_message(msg)
+        server.quit()
+        print("Correo de notificación enviado con éxito.")
+    except Exception as e:
+        print(f"Error al enviar el correo: {e}") 
+    
+
+
 @app.post("/registrar-o-validar-usuario", response_model=UserResponse)
 async def registrar_o_validar_usuario(request: UserRequest):
     try:
@@ -154,10 +191,12 @@ async def crear_y_procesar_ticket(request: TicketSimpleRequest): # Usa el nuevo 
         }
         insert_ticket_response = supabase.table('tickets').insert(ticket_data).execute()
         ticket_id = insert_ticket_response.data[0]['id']
-        print(f"🎫 Ticket nuevo creado con ID: {ticket_id}")
+        print(f"Ticket nuevo creado con ID: {ticket_id}")
 
+        sentEmail(request.usuario_id, request.descripcion)
+        
         # PASO 3: EJECUTAR EL ANÁLISIS DE IA (sin cambios)
-        print(f"🧠 Ejecutando análisis de IA...")
+        print( "Ejecutando análisis...")
         solucion_sugerida = await encontrar_solucion_semantica(request.descripcion)
         keywords_obj = kw_model.extract_keywords(request.descripcion, keyphrase_ngram_range=(1, 2), stop_words='spanish', use_mmr=True, diversity=0.7, top_n=5)
         keywords_extraidas = [kw[0] for kw in keywords_obj]
@@ -177,10 +216,9 @@ async def crear_y_procesar_ticket(request: TicketSimpleRequest): # Usa el nuevo 
             keywords_extraidas=keywords_extraidas
         )
     except Exception as e:
-        print(f"❌ Error en el flujo: {e}")
+        print(f"Error en el flujo: {e}")
         raise HTTPException(status_code=500, detail=f"Ocurrió un error en el servidor: {e}")
 
-# En tu archivo de FastAPI, debajo de tu otro endpoint
 
 @app.post("/resolver-y-entrenar")
 async def resolver_y_entrenar(request: TicketResueltoRequest):
@@ -202,11 +240,11 @@ async def resolver_y_entrenar(request: TicketResueltoRequest):
             'solucion_final': request.solucion_final,
             'estado': 'resuelto_por_humano'
         }).eq('id', str(request.ticket_id)).execute()
-        print("✅ Ticket marcado como resuelto.")
+        print("Ticket marcado como resuelto.")
 
         # --- PASO C: "ALIMENTAR" LA BASE DE CONOCIMIENTOS ---
         # 1. Generar el embedding para la descripción original del problema
-        print("🧠 Generando embedding para el nuevo conocimiento...")
+        print("Generando embedding para el nuevo conocimiento...")
         nuevo_embedding = embedding_model.encode([descripcion_original]).tolist()[0]
 
         # 2. Preparar el nuevo registro de conocimiento
@@ -217,10 +255,10 @@ async def resolver_y_entrenar(request: TicketResueltoRequest):
 
         # 3. Insertar el nuevo conocimiento en la base
         supabase.table('knowledge_base').insert(nuevo_conocimiento).execute()
-        print("✅ ¡Base de conocimientos actualizada con la nueva solución!")
+        print("¡Base de conocimientos actualizada con la nueva solución!")
 
         return {"status": "success", "message": "El ticket fue resuelto y la base de conocimientos ha sido entrenada."}
 
     except Exception as e:
-        print(f"❌ Error durante el entrenamiento: {e}")
+        print(f"Error durante el entrenamiento: {e}")
         raise HTTPException(status_code=500, detail=f"Ocurrió un error: {e}")

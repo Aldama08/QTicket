@@ -3,15 +3,18 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uuid
 from supabase import create_client, Client 
+from dotenv import load_dotenv
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://ibecmvmtlndaonohzxce.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZWNtdm10bG5kYW9ub2h6eGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4MTA4NzQsImV4cCI6MjA1MzM4Njg3NH0.XBLqtGUJ3bPjrDgM6ZifZoJGOponRjfhd9YzFJ6yrL0")
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    print("✅ Conexión establecida.")
+    print("Conexión establecida.")
 except Exception as e:
-    print(f"❌ Error al conectar: {e}")
+    print(f" Error al conectar: {e}")
     exit()
 
 class createPerson(BaseModel):
@@ -32,6 +35,10 @@ app = FastAPI(
     description = "Procesa los datos de los usuarios que requieren un Ticket",
     version="0.0.1"
 )
+
+
+
+    
 
     
 @app.post("/procesar-datos", response_model=personResponse) #Como la funcion la devuelve
