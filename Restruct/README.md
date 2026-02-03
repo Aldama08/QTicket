@@ -1,6 +1,6 @@
 # QTicket
 
-# 🤖 Agente Experto para Help Desk
+# Agente Experto para Help Desk
 
 Este proyecto es un backend construido con FastAPI que funciona como un agente inteligente para un sistema de Help Desk. Su función principal es analizar la descripción de un ticket de soporte, entender su significado y sugerir una solución basada en una base de conocimientos.
 
