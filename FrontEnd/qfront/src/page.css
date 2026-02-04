@@ -106,6 +106,37 @@ textarea {
   border: 1px solid #4b5563;
 }
 
+.solucion-texto {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6; 
+  margin-bottom: 20px;
+  white-space: pre-wrap; 
+}
+
+.keywords-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tag {
+  background-color: #374151;
+  color: #60a5fa;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  border: 1px solid #4b5563;
+  font-weight: 500;
+}
+
+.btn-nuevo-ticket {
+  margin-top: 25px;
+  width: auto; 
+}
+
 /* Botón de logout (Regresar) */
 .btn-secondary {
   align-self: flex-end;

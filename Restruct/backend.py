@@ -16,7 +16,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 try:
@@ -32,30 +31,6 @@ embedding_model = SentenceTransformer(MODELO_SBERT)
 # print("Cargando modelo de keywords (KeyBERT)...")
 kw_model = KeyBERT(model=embedding_model)
 # print("Modelos de IA listos.")
-
-
-# IA 
-async def encontrar_solucion_semantica(descripcion_usuario: str) -> str:
-    # print("Buscando solución inteligente en la DB...")
-    try:
-        user_embedding = embedding_model.encode(descripcion_usuario).tolist()
-
-        rpc_response = supabase.rpc('buscar_soluciones', {
-            'query_embedding': user_embedding,
-            'match_threshold': 0.70, # Eespuestas 70% de similitud 
-            'match_count': 1         # Solo tráeme la mejor
-        }).execute()
-
-        if rpc_response.data:
-            mejor_match = rpc_response.data[0]
-            # print(f"✅ Solución encontrada con {mejor_match['similarity']:.2f} de similitud.")
-            return mejor_match['solucion']
-        
-        return "Hemos recibido tu ticket. Un agente humano lo revisará pronto. ¡Gracias!"
-
-    except Exception as e:
-        return "Error técnico al buscar soluciones."
-
 
 # MODELOS PYDANTIC 
 class TicketSimpleRequest(BaseModel):
@@ -87,24 +62,27 @@ class UserResponse(BaseModel):
     rol: str
 
 
-# FASTAPI 
-app = FastAPI(
-    title="API Help Desk IA",
-    version="2.2.0"
-)
+# IA 
+async def encontrar_solucion_semantica(descripcion_usuario: str) -> str:
+    # print("Buscando solución inteligente en la DB...")
+    try:
+        user_embedding = embedding_model.encode(descripcion_usuario).tolist()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], #En producción, cámbialo a la URL de tu front-end.
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+        rpc_response = supabase.rpc('buscar_soluciones', {
+            'query_embedding': user_embedding,
+            'match_threshold': 0.50, # Eespuestas 70% de similitud 
+            'match_count': 1         # Solo tráeme la mejor
+        }).execute()
 
+        if rpc_response.data:
+            mejor_match = rpc_response.data[0]
+            # print(f"✅ Solución encontrada con {mejor_match['similarity']:.2f} de similitud.")
+            return mejor_match['solucion']
+        
+        return "Hemos recibido tu ticket. Un agente humano lo revisará pronto. ¡Gracias!"
 
-@app.get("/")
-async def root():
-    return {"message": "El Agente está en línea."}
+    except Exception as e:
+        return "Error técnico al buscar soluciones."
 
 
 def sentEmail(nombre, descripcion):
@@ -137,6 +115,28 @@ def sentEmail(nombre, descripcion):
     except Exception as e:
         print(f"Error al enviar el correo: {e}") 
     
+
+
+
+
+# FASTAPI 
+app = FastAPI(
+    title="API Help Desk IA",
+    version="2.2.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], #En producción, cámbialo a la URL de tu front-end.
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+async def root():
+    return {"message": "El Agente está en línea."}
+
 
 
 @app.post("/registrar-o-validar-usuario", response_model=UserResponse)
