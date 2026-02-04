@@ -54,7 +54,7 @@ function Page({ userData, onLogout}) {
   };
 
   const HelpDeskIcon = () => (
-      <svg width="800" height="300"  viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ margin: '0 auto', display: 'block' }}>
+      <svg viewBox='0 0 240 180' fill="none" xmlns="http://www.w3.org/2000/svg" style={{ margin: '0 auto', display: 'block', width: '100%', maxWidth: '320px', height: 'auto'}}>
         {/* Fondo Simple */}
         <rect width="240" height="180" rx="10" fill="#f8faff" />
 
@@ -120,7 +120,7 @@ function Page({ userData, onLogout}) {
       )}
 
       {status === 'error' && (
-        <div className="error-display">
+        <div className="error-display" style={{color: 'red', padding: '10px'}}>
           <p><strong>Ocurrió un error:</strong> {error}</p>
           <button onClick={resetForm}>Intentar de nuevo</button>
         </div>
@@ -134,10 +134,12 @@ function Page({ userData, onLogout}) {
              <h4>Solución Sugerida</h4>
              <p>{resultado.solucion_sugerida}</p>
              <hr />
-             <h4>Palabras Clave Detectadas</h4>
-             <div>
-               {resultado.keywords_extraidas.map(kw => <span key={kw}>{kw}</span>)}
-             </div>
+             {/* <h4>Palabras Clave Detectadas</h4> */}
+          <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+            {resultado.keywords_extraidas.map(kw => (
+              <span key={kw}>{kw}</span>
+            ))}
+          </div>
            </div>
            <button onClick={resetForm}>Crear otro ticket</button>
         </div>

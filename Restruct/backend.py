@@ -167,6 +167,7 @@ async def registrar_o_validar_usuario(request: UserRequest):
     except Exception as e:
         print(f"Error en inserción: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
 
 @app.post("/crear-y-procesar-ticket", response_model=TicketCompletoResponse)
 async def crear_y_procesar_ticket(request: TicketSimpleRequest): 
@@ -184,7 +185,6 @@ async def crear_y_procesar_ticket(request: TicketSimpleRequest):
         ticket_id = insert_ticket_response.data[0]['id']
         print(f"Ticket nuevo creado con ID: {ticket_id}")
 
-        sentEmail(request.usuario_id, request.descripcion)
         
         # PASO 2: EJECUTAR EL ANÁLISIS DE IA
         print( "Ejecutando análisis...")
@@ -198,6 +198,9 @@ async def crear_y_procesar_ticket(request: TicketSimpleRequest):
             'keywords_detectadas': keywords_extraidas,
             'estado': 'analizado_por_ia'
         }).eq('id', str(ticket_id)).execute()
+        
+        sentEmail(request.usuario_id, request.descripcion)
+        
         
         # PASO 5: DEVOLVER LA RESPUESTA
         return TicketCompletoResponse(

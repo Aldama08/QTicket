@@ -1,114 +1,141 @@
-.container{
-  /* position: relative; */
+body {
+  margin: 0;
+  background-color: #374151; 
+}
+
+.container {
+  width: 100%;
+  min-height: 100vh; 
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background-color: #525c69;
-}
-.svg-container{
-  position: absolute;
-  top: 120px;
+  padding: 40px 20px;
+  background-color: #374151; 
+  color: #ffffff;
+  box-sizing: border-box;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.texto-central{
+.svg-container {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 10px;
+}
+
+.texto-central {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 10px 0;
   text-align: center;
-  font-size: 30px;
-  position: absolute;
-  top: 20px;
-  color: #9aa5b1;
 }
 
-p {
-  position: absolute;
-  top: 500px;
-  padding: 10px;
-  font-size: 20px;
-  color: #9aa5b1;
-  margin-left: 15px;
-}
-
-.success-display{
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  top: 700px;
-  space-between: 20px;
-}
-
-.success-display h3{
-  
+form {
+  width: 100%;
+  max-width: 600px;
 }
 
 .group-area {
-  position: fixed;
   display: flex;
-  bottom: 100px;
-  left: 200px;
-  width: 80%;
-  margin: 0 auto;
-  max-width: none;
-  box-sizing: border-box;
-  padding: 10px;
-  align-items: center;
-  gap: 10px;
-  height: 100px;
-  border-top: 1px solid #525c69;
-  z-index: 1000;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.group-area textarea{
-
-  flex-grow: 1;         /* que textarea ocupe todo el espacio disponible */
-  height: 100px;         /* altura interna del textarea */
-  padding: 10px 10px 10px 60px;
-  font-size: 16px;
+textarea {
+  width: 100%;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+  background-color: #1f2937; 
+  color: #f3f4f6;
+  font-size: 1rem;
   resize: none;
-  border-radius: 25px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-  overflow-y: auto;     /* permite scroll vertical si hace falta */
-  white-space: pre-wrap;
-  word-wrap: break-word;
 }
 
-
-
-.button{
-  background-color: transparent; 
-  color: #1f1f1f;
-  padding: 10px 10px;
+.button {
+  padding: 12px;
+  background-color: #2563eb;
+  color: white;
   border: none;
-  border-radius: 15px;
+  border-radius: 6px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 16px;
-  height: 40px;
-  position: absolute;
-  right : 20px;
-  bottom: 12px;
+  transition: background 0.2s;
 }
 
-button:hover {
-  background-color: #f0f0f0;
+.button:hover {
+  background-color: #1d4ed8;
 }
 
-.btn-secondary {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background-color: transparent;
-  border: 1px solid #e0e0e0;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.3s;
+/* Solucion a que se empujaba */
+.success-display {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 30px;
+  padding: 25px;
+  background-color: #1f2937; 
+  border: 1px solid #4b5563;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.success-display h3 {
+  color: #60a5fa;
+  margin-top: 0;
+}
+
+.success-display h4 {
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.success-display p {
+  line-height: 1.6;
   color: #e5e7eb;
 }
 
+/* Etiquetas de palabras clave */
+.success-display span {
+  display: inline-block;
+  background-color: #374151;
+  color: #60a5fa;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  border: 1px solid #4b5563;
+}
+
+/* Botón de logout (Regresar) */
+.btn-secondary {
+  align-self: flex-end;
+  background: transparent;
+  color: #9ca3af;
+  border: 1px solid #4b5563;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
 .btn-secondary:hover {
-  background-color: #9aa5b1;
+  background: #4b5563;
+  color: white;
+}
+
+
+.success-display button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #3b82f6; 
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.success-display button:hover {
+  background-color: #2563eb;
 }
